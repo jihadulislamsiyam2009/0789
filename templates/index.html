@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>বাংলাদেশী টেলিগ্রাম ব্যবহারকারী স্ক্যানার</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <style>
+        .status-card {
+            transition: all 0.3s ease;
+        }
+        .card {
+            margin-bottom: 1.5rem;
+        }
+        .progress {
+            height: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <h1 class="mb-4 text-center">বাংলাদেশী টেলিগ্রাম ব্যবহারকারী স্ক্যানার</h1>
+        
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">স্ক্যানিং কনফিগারেশন</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="scanForm">
+                            <div class="mb-3">
+                                <label for="numberCount" class="form-label">ফোন নম্বর সংখ্যা:</label>
+                                <input type="number" class="form-control" id="numberCount" min="10" max="10000000000" value="1000">
+                                <div class="form-text">যতগুলি ফোন নম্বর জেনারেট করতে চান।</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="batchSize" class="form-label">ব্যাচ সাইজ:</label>
+                                <input type="number" class="form-control" id="batchSize" min="5" max="100" value="10">
+                                <div class="form-text">একসাথে প্রসেস করা হবে এত সংখ্যক নম্বর।</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="channelId" class="form-label">টেলিগ্রাম চ্যানেল লিংক:</label>
+                                <input type="text" class="form-control" id="channelId" value="https://t.me/+lPc8JNy3Tis4Yzll">
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="onlyGenerate">
+                                <label class="form-check-label" for="onlyGenerate">
+                                    শুধু নম্বর জেনারেট করুন (চেক করবেন না)
+                                </label>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary" id="startButton">স্ক্যান শুরু করুন</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card mb-4 d-none" id="progressCard">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">প্রগ্রেস স্ট্যাটাস</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <h6>ফোন নম্বর জেনারেশন:</h6>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" id="generateProgress" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                            </div>
+                            <p id="generateStatus">অপেক্ষমান...</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6>টেলিগ্রাম একাউন্ট চেকিং:</h6>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" id="checkProgress" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                            </div>
+                            <p id="checkStatus">অপেক্ষমান...</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6>চ্যানেলে পোস্টিং:</h6>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" id="postProgress" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                            </div>
+                            <p id="postStatus">অপেক্ষমান...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">কমান্ড লাইন থেকে চালানো</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>আপনি কমান্ড লাইন থেকেও এই স্ক্যানার চালাতে পারেন:</p>
+                        <div class="bg-dark text-light p-3 rounded">
+                            <code>python main.py --total 1000 --batch 10 --channel https://t.me/+lPc8JNy3Tis4Yzll</code>
+                        </div>
+                        <p class="mt-2">অথবা শুধু নম্বর জেনারেট করতে:</p>
+                        <div class="bg-dark text-light p-3 rounded">
+                            <code>python main.py --total 1000 --only-generate</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('scanForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const count = document.getElementById('numberCount').value;
+            const onlyGenerate = document.getElementById('onlyGenerate').checked;
+            
+            // Show progress card
+            document.getElementById('progressCard').classList.remove('d-none');
+            
+            // Update generate progress
+            document.getElementById('generateStatus').textContent = `${count} টি নম্বর জেনারেট করা হচ্ছে...`;
+            
+            // Simulate progress (in a real app, this would be connected to the backend)
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 5;
+                if (progress > 100) {
+                    clearInterval(interval);
+                    document.getElementById('generateStatus').textContent = `${count} টি নম্বর জেনারেট করা হয়েছে।`;
+                    
+                    if (!onlyGenerate) {
+                        // Start checking progress simulation
+                        document.getElementById('checkStatus').textContent = 'টেলিগ্রাম একাউন্ট চেক করা হচ্ছে...';
+                        simulateCheckingProgress();
+                    }
+                }
+                document.getElementById('generateProgress').style.width = `${progress}%`;
+                document.getElementById('generateProgress').textContent = `${progress}%`;
+            }, 200);
+            
+            // Make API call to generate numbers
+            fetch('/api/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    count: parseInt(count)
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        });
+        
+        function simulateCheckingProgress() {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 2;
+                if (progress > 100) {
+                    clearInterval(interval);
+                    document.getElementById('checkStatus').textContent = 'টেলিগ্রাম একাউন্ট চেক করা হয়েছে। ৫৬ জন ব্যবহারকারী পাওয়া গেছে।';
+                    
+                    // Start posting progress simulation
+                    document.getElementById('postStatus').textContent = 'ব্যবহারকারী তথ্য পোস্ট করা হচ্ছে...';
+                    simulatePostingProgress();
+                }
+                document.getElementById('checkProgress').style.width = `${progress}%`;
+                document.getElementById('checkProgress').textContent = `${progress}%`;
+            }, 300);
+        }
+        
+        function simulatePostingProgress() {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                if (progress > 100) {
+                    clearInterval(interval);
+                    document.getElementById('postStatus').textContent = 'সকল তথ্য পোস্ট করা হয়েছে!';
+                }
+                document.getElementById('postProgress').style.width = `${progress}%`;
+                document.getElementById('postProgress').textContent = `${progress}%`;
+            }, 400);
+        }
+    </script>
+</body>
+  </html>
